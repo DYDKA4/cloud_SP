@@ -36,7 +36,7 @@ if args.os not in acceptable_OS:
     print("Wrong type of OS")
     raise SystemExit(1)
 
-PIPE = subprocess.PIPE
+# PIPE = subprocess.PIPE
 # subprocess.call(["terraform", "init"], stdout=subprocess.DEVNULL)
 # subprocess.call(["terraform", "plan"])
 # subprocess.call(["terraform", "apply", "-auto-approve"])

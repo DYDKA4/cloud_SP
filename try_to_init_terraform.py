@@ -3,7 +3,7 @@ import subprocess
 
 
 # python   read_params.py --name ABC --network 123 --os centos7 --cpu 1 --ram 1024 --size 2048 --key ABC123
-acceptable_OS = ("centos7", "ubuntu18.04", "ubuntu20.04")
+acceptable_OS = ("centos-7", "ubuntu18.04", "ubuntu20.04")
 acceptable_CPU = (8, 2, 1)
 acceptable_RAM = (32, 16, 8, 4, 2, 1, 0.5)
 acceptable_SIZW = (100, 50, 40, 25, 20, 12, 10, 1)
@@ -20,14 +20,19 @@ args = parser.parse_args()
 if args.os not in acceptable_OS:
     print("Wrong type of OS")
     raise SystemExit(1)
-cmd = 'ping yandex.ru -c 5'
 
 PIPE = subprocess.PIPE
-subprocess.call(["terraform", "init"], stdout=subprocess.DEVNULL)
-subprocess.call(["terraform", "plan"])
-subprocess.call(["terraform", "apply", "-auto-approve"])
+if subprocess.call(["terraform", "init"], stdout=subprocess.DEVNULL):
+    print("FAIL")
+    raise SystemExit(2)
 
+if subprocess.call(["terraform", "plan"], stdout=subprocess.DEVNULL):
+    print("FAIL")
+    raise SystemExit(3)
 
+if subprocess.call(["terraform", "apply", "-auto-approve"], stdout=subprocess.DEVNULL):
+    print("FAIL")
+    raise SystemExit(4)
+print("\nOK")
 
-print("\nprocess finished")
 

@@ -13,7 +13,7 @@ required_version = ">= 0.14.0"
 provider "openstack" {
   user_name   = "tulin"
   tenant_name = "sandbox"
-  password    = "102"
+  password    = "KfrGtgHbb6"
   auth_url    = "https://sky.ispras.ru:13000"
   user_domain_name = "ispras"
   project_domain_name = "ispras" 
@@ -24,10 +24,10 @@ provider "openstack" {
 
 # Create a web server
 resource "openstack_compute_instance_v2" "tulin" {
-  name            = "ABC"
-  image_id        = "Заглушка"
-  flavor_name     = "Заглушка"
-  key_pair        = "ABC123"
+  name            = "tulin_network"
+  image_id        = "fabulous.cmedium"
+  flavor_name     = "81fb0659-81d2-4f3f-a9b2-0c232d4866fe"
+  key_pair        = "tulin_key"
   
   security_groups = ["default"]
 
@@ -36,7 +36,7 @@ resource "openstack_compute_instance_v2" "tulin" {
   }
 
   network {
-    name = "net-for-83.149.198-sandbox"
+    name = "123"
   }
 } 
 
