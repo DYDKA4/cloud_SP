@@ -4,22 +4,26 @@ import shutil
 import openstack
 import json
 
-# python   final.py --name tulin_network_2 --network net-for-83.149.198-sandbox --os centos7 --cpu 4\
-# --ram 4 --size 10 --key tulin_key
+# python   final.py --name tulin_network_2 --network net-for-83.149.198-sandbox --os centos7 --cpu 4  --ram 4 --size 10 --key tulin_key
 acceptable_OS = ("centos7", "ubuntu18.04", "ubuntu20.04")
+full_name_OS = ('CentOS-7-x86_64-GenericCloud-2009', 'Ubuntu Server 18.04 LTS (Bionic Beaver)',
+                'Ubuntu Server 20.04 LTS (Focal Fossa)')
+# можно придумать user interface для подбора наиболе cхожих имён acceptable_OS с именами операционных систем пришедших
+# от api
+name_dict = dict(zip(acceptable_OS, full_name_OS))
 parser = argparse.ArgumentParser()
 parser.add_argument("--name", required=True, help="имя виртуальной машины")
 parser.add_argument("--network", required=True, help=" id виртуальной сети")
 parser.add_argument("--os", required=True,
-                    help="операционная система виртуальной машины, доступные значения \
+                    help="операционная система виртуальной машины   , доступные значения \
                     centos7, ubuntu18.04, ubuntu20.04")
 parser.add_argument("--cpu", required=True, type=int, help="число виртуальных ядер")
-parser.add_argument("--ram", required=True, type=float  , help="объем RAM в GB")
+parser.add_argument("--ram", required=True, type=float, help="объем RAM в GB")
 parser.add_argument("--size", required=True, type=int, help="размер диска в GB")
 parser.add_argument("--key", required=True, help=" имя ключа из key-pair в openstack")
 args = parser.parse_args()
 if args.os not in acceptable_OS:
-    print("FAIL")
+    print("FAIL, WRONG OS")
     raise SystemExit(1)
 
 password = input("Enter password: ")
@@ -34,34 +38,20 @@ conn = openstack.connect(
     compute_api_version='2',
     identity_interface='internal')
 
-params = []
-names = []
-for flavor in conn.compute.flavors():
-    names.append(flavor.name)
-    params.append([flavor.vcpus, flavor.ram / 1024, flavor.disk])
+flavor_name = ' '
 param = [args.cpu, args.ram, args.size, ]
+for flavor in conn.compute.flavors():
+    if param == [flavor.vcpus, flavor.ram / 1024, flavor.disk]:
+        flavor_name = flavor.name
 
-if param in params:
-    flavor = (names[params.index(param)])
-else:
-    print("FAIL")
+if flavor_name == ' ':
+    print("FAIL, NO SUCH FLAVOR")
     raise SystemExit(5)
 
-images_id = []
-images_name = []
+name = ' '
 for image in conn.compute.images():
-    # print(image.name)
-    images_name.append(image.name)
-    images_id.append(image.id)
-
-acceptable_OS = ("centos7", "ubuntu18.04", "ubuntu20.04")
-name = "ubuntu18.04"
-if name == "centos7":
-    name = images_id[images_name.index('CentOS-7-x86_64-GenericCloud-2009')]
-elif name == "ubuntu20.04":
-    name = images_id[images_name.index('Ubuntu Server 20.04 LTS (Focal Fossa)')]
-elif name == "ubuntu18.04":
-    name = images_id[images_name.index('Ubuntu Server 18.04 LTS (Bionic Beaver)')]
+    if name_dict[args.os] == image.name:
+        name = image.id
 
 shutil.copy("copy_deploy.txt", "deploy.tf")
 with open('deploy.tf', 'r') as f:
@@ -70,7 +60,7 @@ with open('deploy.tf', 'r') as f:
 new_data = old_data.replace("\"\"", "\"" + password + "\"", 1)
 new_data = new_data.replace("\"\"", "\"" + args.name + "\"", 1)
 new_data = new_data.replace("\"\"", "\"" + name + "\"", 1)
-new_data = new_data.replace("\"\"", "\"" + flavor + "\"", 1)
+new_data = new_data.replace("\"\"", "\"" + flavor_name + "\"", 1)
 new_data = new_data.replace("\"\"", "\"" + args.key + "\"", 1)
 new_data = new_data.replace("\"\"", "\"" + args.network + "\"", 1)
 
@@ -79,19 +69,20 @@ with open('deploy.tf', 'w') as f:
     f.write(new_data)
 
 PIPE = subprocess.PIPE
-if subprocess.call(["terraform", "init"]):
-    print("FAIL")
+if subprocess.call(["terraform", "init"], stdout=subprocess.DEVNULL):
+    print("FAIL,TERRAFORM INIT")
     raise SystemExit(2)
 
-if subprocess.call(["terraform", "plan"]):
-    print("FAIL")
+if subprocess.call(["terraform", "plan"], stdout=subprocess.DEVNULL):
+    print("FAIL, TERRAFORM PLAM")
     raise SystemExit(3)
 
-if subprocess.call(["terraform", "apply", "-auto-approve"]):
-    print("FAIL")
+if subprocess.call(["terraform", "apply", "-auto-approve"], stdout=subprocess.DEVNULL):
+    print("FAIL, TERRAFORM APPLY")
     raise SystemExit(4)
 
-instance = conn.compute.find_server(args.name, ignore_missing=True)
-
-print("\nOK")
-print(json.dumps(instance, indent=2))
+for server in conn.compute.servers():
+    server_info = server.to_dict()
+    if server_info["name"] == args.name:
+        print("\nOK")
+        print(json.dumps(server_info, indent=2))
