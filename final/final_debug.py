@@ -39,14 +39,45 @@ conn = openstack.connect(
     identity_interface='internal')
 
 flavor_name = ' '
-param = [args.cpu, args.ram, args.size, ]
+param = [args.cpu, args.ram, args.size]
+params = []
+summa = []
+names = []
 for flavor in conn.compute.flavors():
-    if param == [flavor.vcpus, flavor.ram / 1024, flavor.disk]:
-        flavor_name = flavor.name
+    if flavor.vcpus >= param[0] and flavor.ram/1024 >= param[1] and flavor.disk >= param[2]:
+        params.append([flavor.vcpus, flavor.ram / 1024, flavor.disk])
+        summa.append(sum([flavor.vcpus, flavor.ram/1024, flavor.disk]))
+        names.append(flavor.name)
 
-if flavor_name == ' ':
-    print("FAIL, NO SUCH FLAVOR")
+
+def ind_eq(arr):
+    n = len(arr)
+    res = []
+    for i in range(n - 1):
+        for j in range(i + 1, n):
+            if min(arr) == arr[i] and arr[i] == arr[j]:
+                res.append((i, j))
+    return res
+if names == []:
+    print("NO SUCH FLAVOR")
     raise SystemExit(5)
+else:
+    res = ind_eq(summa)
+    flavor_name = names[summa.index(min(summa))]
+    params_fl = params[summa.index(min(summa))]
+    if res != []:
+        for ind in res:
+            # print(names[ind[0]], " ", names[ind[1]])
+            # print(params[ind[0]], " ", params[ind[1]])
+            if params_fl[0] < params[ind[1]][0]:
+                params_fl = params[ind[1]]
+                flavor_name = names[ind[1]]
+            elif params_fl[0] == params[ind[1]][0] and params_fl[1] < params[ind[1]][1]:
+                params_fl = params[ind[1]]
+                flavor_name = names[ind[1]]
+            # elif params_fl[1] == params[ind[1]][1] and params_fl[2] < params[ind[1]][2]:
+            #     params_fl = params[ind[1]]
+            #     flavor_name = names[ind[1]]
 
 name = ' '
 for image in conn.compute.images():
@@ -81,8 +112,12 @@ if subprocess.call(["terraform", "apply", "-auto-approve"]):
     print("FAIL, TERRAFORM APPLY")
     raise SystemExit(4)
 
+
 for server in conn.compute.servers():
     server_info = server.to_dict()
     if server_info["name"] == args.name:
+        output = {"NAME": args.name, "ID": server_info["id"], 'Created': server_info["created_at"],
+                  "FlavorName": flavor_name, "Network": args.network, "Image Name": name_dict[args.os],
+                  "Key": args.key, "IP": server_info["addresses"]}
         print("\nOK")
-        print(json.dumps(server_info, indent=2))
+        print(json.dumps(output, indent=2))

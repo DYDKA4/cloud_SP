@@ -4,7 +4,15 @@ import shutil
 import openstack
 import json
 
-# python   final.py --name tulin_network_2 --network net-for-83.149.198-sandbox --os centos7 --cpu 4  --ram 4 --size 10 --key tulin_key
+# python   final.py --name tulin_network_2 --network net-for-83.149.198-sandbox --os centos7 --cpu 1  --ram 2 --size 10 --key tulin_key_2
+# python   final.py --name tulin_network_2 --network net-for-83.149.198-sandbox --os centos7 --cpu 1  --ram 2 --size 10 --key tulin_key
+# python   final.py --name tulin_network_2 --network net-for-83.149.198-sandbox --os centos7 --cpu 1  --ram 2 --size 10 --key wrong_key
+# python   final.py --name tulin_network_2 --network net-for-83.149.198-sandbox --os centos7 --cpu 1  --ram 2 --size 10
+# python   final.py --name tulin_network_2 --network net-for-83.149.198-sandbox --os ubuntu20.4 --cpu 1  --ram 2 --size 10 --key tulin_key
+# python   final.py --name tulin_network_3 --network net-for-83.149.198-sandbox --os centos7 --cpu 1  --ram 2 --size 10 --key tulin_key
+# python final.py
+# python final.py --help
+
 acceptable_OS = ("centos7", "ubuntu18.04", "ubuntu20.04")
 full_name_OS = ('CentOS-7-x86_64-GenericCloud-2009', 'Ubuntu Server 18.04 LTS (Bionic Beaver)',
                 'Ubuntu Server 20.04 LTS (Focal Fossa)')
@@ -49,6 +57,7 @@ if flavor_name == ' ':
     raise SystemExit(5)
 
 name = ' '
+setting = []
 for image in conn.compute.images():
     if name_dict[args.os] == image.name:
         name = image.id
